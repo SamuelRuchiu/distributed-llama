@@ -5,10 +5,11 @@
 #include <stdexcept>
 #include <chrono>
 #if defined(DLLAMA_VULKAN)
-    #include "nn/nn-vulkan.hpp"
+#include "nn/nn-vulkan.hpp"
 #endif
 
-const char *getFileName(const char *path) {
+const char *getFileName(const char *path)
+{
     const char *separator = std::strrchr(path, '/');
     const char *backslash = std::strrchr(path, '\\');
     if (backslash != nullptr && (separator == nullptr || backslash > separator))
@@ -16,26 +17,37 @@ const char *getFileName(const char *path) {
     return separator == nullptr ? path : separator + 1;
 }
 
-static NnFloatType parseFloatType(char *val) {
-    if (std::strcmp(val, "f32") == 0) return F_32;
-    if (std::strcmp(val, "f16") == 0) return F_16;
-    if (std::strcmp(val, "q40") == 0) return F_Q40;
-    if (std::strcmp(val, "q80") == 0) return F_Q80;
+static NnFloatType parseFloatType(char *val)
+{
+    if (std::strcmp(val, "f32") == 0)
+        return F_32;
+    if (std::strcmp(val, "f16") == 0)
+        return F_16;
+    if (std::strcmp(val, "q40") == 0)
+        return F_Q40;
+    if (std::strcmp(val, "q80") == 0)
+        return F_Q80;
     throw std::runtime_error("Invalid float type: " + std::string(val));
 }
 
-static ChatTemplateType parseChatTemplateType(char *val) {
-    if (std::strcmp(val, "llama2") == 0) return TEMPLATE_LLAMA2;
-    if (std::strcmp(val, "llama3") == 0) return TEMPLATE_LLAMA3;
-    if (std::strcmp(val, "deepSeek3") == 0) return TEMPLATE_DEEP_SEEK3;
-    if (std::strcmp(val, "chatml") == 0) return TEMPLATE_CHATML;
-    if (std::strcmp(val, "chatml_thinking") == 0) return TEMPLATE_CHATML_THINKING;
+static ChatTemplateType parseChatTemplateType(char *val)
+{
+    if (std::strcmp(val, "llama2") == 0)
+        return TEMPLATE_LLAMA2;
+    if (std::strcmp(val, "llama3") == 0)
+        return TEMPLATE_LLAMA3;
+    if (std::strcmp(val, "deepSeek3") == 0)
+        return TEMPLATE_DEEP_SEEK3;
+    if (std::strcmp(val, "chatml") == 0)
+        return TEMPLATE_CHATML;
+    if (std::strcmp(val, "chatml_thinking") == 0)
+        return TEMPLATE_CHATML_THINKING;
     throw std::runtime_error("Invalid chat template type: " + std::string(val));
 }
 
 AppCliArgs AppCliArgs::parse(
-    int argc, char* *argv, bool requireMode, const char *extraConfigName
-) {
+    int argc, char **argv, bool requireMode, const char *extraConfigName)
+{
     AppCliArgs args;
     args.info = true;
     args.help = false;
@@ -65,45 +77,63 @@ AppCliArgs AppCliArgs::parse(
     args.benchmark = false;
 
     int i = 1;
-    if (requireMode && argc > 1) {
+    if (requireMode && argc > 1)
+    {
         args.mode = argv[1];
         i++;
     }
     // First see if any of the args are asking for help/usage and fail fast
-    for (int x = 0; x < argc; x++) {
+    for (int x = 0; x < argc; x++)
+    {
         if ((std::strcmp(argv[x], "--usage") == 0) ||
             (std::strcmp(argv[x], "--help") == 0) ||
-            (std::strcmp(argv[x], "-h") == 0)) {
+            (std::strcmp(argv[x], "-h") == 0))
+        {
             args.help = true;
             return args;
         }
     }
-    for (; i + 1 < argc; i += 2) {
+    for (; i + 1 < argc; i += 2)
+    {
         char *name = argv[i];
         char *value = argv[i + 1];
-        if (std::strcmp(name, "--model") == 0) {
+        if (std::strcmp(name, "--model") == 0)
+        {
             args.modelPath = value;
-        } else if (std::strcmp(name, "--tokenizer") == 0) {
+        }
+        else if (std::strcmp(name, "--tokenizer") == 0)
+        {
             args.tokenizerPath = value;
-        } else if (extraConfigName != nullptr && std::strcmp(name, extraConfigName) == 0) {
+        }
+        else if (extraConfigName != nullptr && std::strcmp(name, extraConfigName) == 0)
+        {
             args.extraConfigPath = value;
-        } else if (std::strcmp(name, "--prompt") == 0) {
+        }
+        else if (std::strcmp(name, "--prompt") == 0)
+        {
             args.prompt = value;
-        } else if (std::strcmp(name, "--buffer-float-type") == 0) {
+        }
+        else if (std::strcmp(name, "--buffer-float-type") == 0)
+        {
             args.syncType = parseFloatType(value);
-        } else if (std::strcmp(name, "--workers") == 0) {
+        }
+        else if (std::strcmp(name, "--workers") == 0)
+        {
             int j = i + 1;
-            for (; j < argc && argv[j][0] != '-'; j++);
+            for (; j < argc && argv[j][0] != '-'; j++)
+                ;
             int count = j - i - 1;
 
             args.nWorkers = count;
-            args.workerHosts = new char*[count];
+            args.workerHosts = new char *[count];
             args.workerPorts = new NnUint[count];
 
-            for (int s = 0; s < count; s++) {
+            for (int s = 0; s < count; s++)
+            {
                 char *v = argv[i + 1 + s];
                 char *separator = std::strstr(v, ":");
-                if (separator == NULL) {
+                if (separator == NULL)
+                {
                     throw std::runtime_error("Invalid worker address: " + std::string(v));
                 }
                 int hostLen = separator - v;
@@ -114,37 +144,65 @@ AppCliArgs AppCliArgs::parse(
             }
 
             i += count - 1;
-        } else if (std::strcmp(name, "--port") == 0) {
+        }
+        else if (std::strcmp(name, "--port") == 0)
+        {
             args.port = atoi(value);
-        } else if (std::strcmp(name, "--host") == 0) {
+        }
+        else if (std::strcmp(name, "--host") == 0)
+        {
             args.host = value;
-        } else if (std::strcmp(name, "--nthreads") == 0) {
+        }
+        else if (std::strcmp(name, "--nthreads") == 0)
+        {
             args.nThreads = atoi(value);
-        } else if (std::strcmp(name, "--nbatches") == 0) {
+        }
+        else if (std::strcmp(name, "--nbatches") == 0)
+        {
             args.nBatches = atoi(value);
-        } else if (std::strcmp(name, "--steps") == 0) {
+        }
+        else if (std::strcmp(name, "--steps") == 0)
+        {
             args.steps = atoi(value);
-        } else if (std::strcmp(name, "--temperature") == 0) {
+        }
+        else if (std::strcmp(name, "--temperature") == 0)
+        {
             args.temperature = atof(value);
-        } else if (std::strcmp(name, "--topp") == 0) {
+        }
+        else if (std::strcmp(name, "--topp") == 0)
+        {
             args.topp = atof(value);
-        } else if (std::strcmp(name, "--seed") == 0) {
+        }
+        else if (std::strcmp(name, "--seed") == 0)
+        {
             args.seed = atoll(value);
-        } else if (std::strcmp(name, "--chat-template") == 0) {
+        }
+        else if (std::strcmp(name, "--chat-template") == 0)
+        {
             args.chatTemplateType = parseChatTemplateType(value);
-        } else if (std::strcmp(name, "--max-seq-len") == 0) {
+        }
+        else if (std::strcmp(name, "--max-seq-len") == 0)
+        {
             args.maxSeqLen = (unsigned int)atoi(value);
-        } else if (std::strcmp(name, "--gpu-index") == 0) {
+        }
+        else if (std::strcmp(name, "--gpu-index") == 0)
+        {
             args.gpuIndex = atoi(value);
-        } else if (std::strcmp(name, "--gpu-segments") == 0) {
+        }
+        else if (std::strcmp(name, "--gpu-segments") == 0)
+        {
             char *separator = std::strstr(value, ":");
             if (separator == NULL)
                 throw std::runtime_error("GPU segments expected in the format <from>:<to>");
             args.gpuSegmentFrom = atoi(value);
             args.gpuSegmentTo = atoi(separator + 1);
-        } else if (std::strcmp(name, "--net-turbo") == 0) {
+        }
+        else if (std::strcmp(name, "--net-turbo") == 0)
+        {
             args.netTurbo = atoi(value) == 1;
-        } else {
+        }
+        else
+        {
             throw std::runtime_error("Unknown option: " + std::string(name));
         }
     }
@@ -156,8 +214,10 @@ AppCliArgs AppCliArgs::parse(
     return args;
 }
 
-AppCliArgs::~AppCliArgs() {
-    if (workerHosts != nullptr) {
+AppCliArgs::~AppCliArgs()
+{
+    if (workerHosts != nullptr)
+    {
         for (NnUint i = 0; i < nWorkers; i++)
             delete[] workerHosts[i];
         delete[] workerHosts;
@@ -166,28 +226,31 @@ AppCliArgs::~AppCliArgs() {
         delete[] workerPorts;
 }
 
-static std::vector<NnExecutorDevice> resolveDevices(AppCliArgs *args, NnNetConfig *netConfig, NnNodeConfig *nodeConfig, NnNetExecution *netExecution) {
+static std::vector<NnExecutorDevice> resolveDevices(AppCliArgs *args, NnNetConfig *netConfig, NnNodeConfig *nodeConfig, NnNetExecution *netExecution)
+{
     std::vector<NnExecutorDevice> devices;
 
-    if (args->gpuIndex >= 0) {
+    if (args->gpuIndex >= 0)
+    {
 #if defined(DLLAMA_VULKAN)
         devices.push_back(NnExecutorDevice(
             new NnVulkanDevice(args->gpuIndex, netConfig, nodeConfig, netExecution),
             args->gpuSegmentFrom,
-            args->gpuSegmentTo
-        ));
+            args->gpuSegmentTo));
 #else
         throw std::runtime_error("This build does not support GPU");
 #endif
     }
 
-    if (args->gpuIndex < 0 || (args->gpuSegmentFrom >= 0 && args->gpuSegmentTo >= 0)) {
+    if (args->gpuIndex < 0 || (args->gpuSegmentFrom >= 0 && args->gpuSegmentTo >= 0))
+    {
         devices.push_back(NnExecutorDevice(new NnCpuDevice(netConfig, nodeConfig, netExecution), -1, -1));
     }
     return devices;
 }
 
-RootLlmInference::RootLlmInference(LlmGraph *graph, NnNetExecution *execution, NnExecutor *executor, NnNetwork *network) {
+RootLlmInference::RootLlmInference(LlmGraph *graph, NnNetExecution *execution, NnExecutor *executor, NnNetwork *network)
+{
     assert(graph->tokenPipeIndex != UINT_MAX);
     assert(graph->positionPipeIndex != UINT_MAX);
     assert(graph->outputPipeIndex != UINT_MAX);
@@ -201,12 +264,14 @@ RootLlmInference::RootLlmInference(LlmGraph *graph, NnNetExecution *execution, N
     this->network = network; // May be nullptr!
 }
 
-void RootLlmInference::setBatchSize(NnUint batchSize) {
+void RootLlmInference::setBatchSize(NnUint batchSize)
+{
     execution->setBatchSize(batchSize);
     controlPacket.batchSize = batchSize;
 }
 
-void RootLlmInference::setPosition(NnUint position) {
+void RootLlmInference::setPosition(NnUint position)
+{
     assert(position >= 0);
     assert(position + execution->batchSize - 1 < header->seqLen);
 
@@ -215,36 +280,49 @@ void RootLlmInference::setPosition(NnUint position) {
         positionPipe[i] = (float)(position + i);
 }
 
-void RootLlmInference::setToken(NnUint batchIndex, NnUint token) {
+void RootLlmInference::setToken(NnUint batchIndex, NnUint token)
+{
     assert(batchIndex >= 0 && batchIndex < execution->batchSize);
     tokenPipe[batchIndex] = (float)token;
 }
-
-void RootLlmInference::forward() {
-    if (network != nullptr) 
+/*
+ * ARCHITECTURAL NOTE:
+ * This loop executes the autoregressive token generation.
+ * 1. Tokenizes input prompt into integer IDs.
+ * 2. Broadcasts hidden states to worker nodes via TCP sockets.
+ * 3. Aggregates partial dot-products before applying Softmax.
+ */
+void RootLlmInference::forward()
+{
+    if (network != nullptr)
         network->writeAll(&controlPacket, sizeof(LlmControlPacket));
     executor->forward();
 }
 
-void RootLlmInference::finish() {
-    if (network != nullptr) {
+void RootLlmInference::finish()
+{
+    if (network != nullptr)
+    {
         controlPacket.batchSize = 0;
         network->writeAll(&controlPacket, sizeof(LlmControlPacket));
     }
 }
 
-WorkerLlmInference::WorkerLlmInference(NnNetExecution *execution, NnNetwork *network) {
+WorkerLlmInference::WorkerLlmInference(NnNetExecution *execution, NnNetwork *network)
+{
     this->isFinished = false;
     this->execution = execution;
     this->network = network;
     this->positionPipe = (float *)execution->pipes[0];
 }
 
-bool WorkerLlmInference::tryReadControlPacket() {
+bool WorkerLlmInference::tryReadControlPacket()
+{
     const unsigned long maxAttempts = 10000;
     if (!network->tryReadWithMaxAttempts(ROOT_SOCKET_INDEX, &controlPacket, sizeof(LlmControlPacket), maxAttempts))
         return false;
-    if (controlPacket.batchSize == 0) {
+    if (controlPacket.batchSize == 0)
+    {
         printf("🛑 Stop signal\n");
         isFinished = true;
         return true;
@@ -255,7 +333,8 @@ bool WorkerLlmInference::tryReadControlPacket() {
     return true;
 }
 
-void runInferenceApp(AppCliArgs *args, void (*handler)(AppInferenceContext *context)) {
+void runInferenceApp(AppCliArgs *args, void (*handler)(AppInferenceContext *context))
+{
     if (args->modelPath == nullptr)
         throw std::runtime_error("Model path must be specified");
     if (args->tokenizerPath == nullptr)
@@ -283,7 +362,8 @@ void runInferenceApp(AppCliArgs *args, void (*handler)(AppInferenceContext *cont
 
     NnNodeConfig *rootNodeConfig = &graph->nodeConfigs[0];
 
-    if (args->info) {
+    if (args->info)
+    {
         tokenizer.printHeader();
         model.printHeader(header.get());
         printNodeRequiredMemory(&graph->netConfig, rootNodeConfig);
@@ -295,9 +375,12 @@ void runInferenceApp(AppCliArgs *args, void (*handler)(AppInferenceContext *cont
     std::unique_ptr<NnNetwork> networkPtr(nullptr);
     NnNetwork *network = nullptr;
 
-    if (nNodes == 1) {
+    if (nNodes == 1)
+    {
         synchronizer.reset(new NnFakeNodeSynchronizer());
-    } else {
+    }
+    else
+    {
         networkPtr = NnNetwork::connect(args->nWorkers, args->workerHosts, args->workerPorts);
         network = networkPtr.get();
         synchronizer.reset(new NnNetworkNodeSynchronizer(network, &execution, &graph->netConfig, rootNodeConfig));
@@ -314,9 +397,11 @@ void runInferenceApp(AppCliArgs *args, void (*handler)(AppInferenceContext *cont
 
     RootLlmInference inference(graph.get(), &execution, &executor, network);
 
-    if (network != nullptr) {
+    if (network != nullptr)
+    {
         network->resetStats();
-        if (args->netTurbo) {
+        if (args->netTurbo)
+        {
             network->setTurbo(true);
             printf("🚁 Network is in non-blocking mode\n");
         }
@@ -336,17 +421,20 @@ void runInferenceApp(AppCliArgs *args, void (*handler)(AppInferenceContext *cont
     inference.finish();
 }
 
-void runWorkerApp(AppCliArgs *args) {
-    for (NnUint attempt = 0; ; attempt++) {
-        try {
+void runWorkerApp(AppCliArgs *args)
+{
+    for (NnUint attempt = 0;; attempt++)
+    {
+        try
+        {
             std::unique_ptr<NnNetwork> networkPtr = NnNetwork::serve(args->host, args->port);
             NnNetwork *network = networkPtr.get();
 
             NnWorkerConfigReader configReader(network);
             NnNetConfig netConfig = configReader.readNet();
-            std::unique_ptr<NnNetConfig, void(*)(NnNetConfig *)> netConfigPtr(&netConfig, releaseNetConfig);
+            std::unique_ptr<NnNetConfig, void (*)(NnNetConfig *)> netConfigPtr(&netConfig, releaseNetConfig);
             NnNodeConfig nodeConfig = configReader.readNode();
-            std::unique_ptr<NnNodeConfig, void(*)(NnNodeConfig *)> nodeConfigPtr(&nodeConfig, releaseNodeConfig);
+            std::unique_ptr<NnNodeConfig, void (*)(NnNodeConfig *)> nodeConfigPtr(&nodeConfig, releaseNodeConfig);
 
             if (attempt == 0)
                 printNodeRequiredMemory(&netConfig, &nodeConfig);
@@ -364,12 +452,15 @@ void runWorkerApp(AppCliArgs *args) {
             bool isFirstAttempt = true;
             bool isTurboEnabled = false;
             clock_t startTime;
-            while (true) {
+            while (true)
+            {
                 if (isFirstAttempt)
                     startTime = clock();
 
-                if (!inference.tryReadControlPacket()) {
-                    if (isTurboEnabled && !isFirstAttempt && clock() - startTime > CLOCKS_PER_SEC) {
+                if (!inference.tryReadControlPacket())
+                {
+                    if (isTurboEnabled && !isFirstAttempt && clock() - startTime > CLOCKS_PER_SEC)
+                    {
                         network->setTurbo(false);
                         isTurboEnabled = false;
                         printf("🚁 Network is in blocking mode\n");
@@ -380,7 +471,8 @@ void runWorkerApp(AppCliArgs *args) {
                 if (inference.isFinished)
                     break;
 
-                if (args->netTurbo && !isTurboEnabled) {
+                if (args->netTurbo && !isTurboEnabled)
+                {
                     network->setTurbo(true);
                     isTurboEnabled = true;
                     printf("🚁 Network is in non-blocking mode\n");
@@ -388,9 +480,13 @@ void runWorkerApp(AppCliArgs *args) {
                 executor.forward();
                 isFirstAttempt = true;
             }
-        } catch (const NnTransferSocketException &e) {
+        }
+        catch (const NnTransferSocketException &e)
+        {
             printf("🚨 Network error: %s\n", e.what());
-        } catch (const NnExecutorException &e) {
+        }
+        catch (const NnExecutorException &e)
+        {
             printf("🚨 Inference error: %s\n", e.what());
         }
     }
